@@ -1,0 +1,1 @@
+This is a library for creating graphics in openGL using GLFW and GLEW.

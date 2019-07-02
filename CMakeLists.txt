@@ -1,31 +1,44 @@
 cmake_minimum_required(VERSION 3.0)
 project(GraphicsEngine VERSION 1.0.0)
 
+option(LINUX "Set OS option" ON)
+
 add_library(
     libengine
-    engine.cpp
-    engine.hpp
+    ./src/engine.cpp
+    ./src/engine.hpp
 )
+if(LINUX)
 
-target_link_libraries(
-    libengine
-    -lGL 
-    -lGLU 
-    -lglfw3 
-    -lX11 
-    -lXxf86vm 
-    -lXrandr 
-    -lpthread 
-    -lXi 
-    -ldl 
-    -lXinerama 
-    -lXcursor 
-    -lGLEW
-)
+    target_link_libraries(
+        libengine
+        -lGL 
+        -lGLU 
+        -lglfw3 
+        -lX11 
+        -lXxf86vm 
+        -lXrandr 
+        -lpthread 
+        -lXi 
+        -ldl 
+        -lXinerama 
+        -lXcursor 
+        -lGLEW
+    )
+else()
+
+    target_link_libraries(
+        libengine
+        glew32s
+        libglfw3
+    )
+
+endif()
+
 
 add_executable(
     test
-    main.cpp
+    src/test/main.cpp
 )
 
 target_link_libraries(

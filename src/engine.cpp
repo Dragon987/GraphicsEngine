@@ -2,7 +2,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "engine.hpp"
+#include "./engine.hpp"
 
 static unsigned int CompileShader(unsigned int type, const std::string &src)
 {
