@@ -8,9 +8,9 @@ int main()
 
     while (!r.WindowShouldClose())
     {
-        r.Background({0.4f, 0.4f, 0.4f, 0.4f});
+        r.Background({0.0f, 0.0f, 0.0f, 0.0f});
 
-        r.DrawCircle(300, 300, 100, {0.4, 0, 1, 0});
+        r.DrawCircle(300, 300, 100, {1, 0, 0, 0});
 
         r.SwapBuffers();
 
