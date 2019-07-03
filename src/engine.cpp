@@ -4,6 +4,7 @@
 
 #include "./engine.hpp"
 
+
 static unsigned int CompileShader(unsigned int type, const std::string &src)
 {
     unsigned int id = glCreateShader(type);
@@ -226,16 +227,29 @@ void Renderer::DrawTriangle(float x1, float y1, float x2, float y2, float x3, fl
     Line(x3, y3, x2, y2, c);
 }
 
-void Renderer::FillRect(float x, float y, float w, float h, Color c)
+void Renderer::FillRect(float x, float y, float w, float h, RectMode mode, Color c)
 {
     unsigned int vb, ib;
+    float *positions;
+    if (mode == RECT_MODE_TOP_LEFT)
+    {
+        positions = new float[8]{
+            x,     y,
+            x + w, y,
+            x + w, y + h,
+            x,     y + h,
+        };
+    }
 
-    float positions[] = {
-        x,     y,
-        x + w, y,
-        x + w, y + h,
-        x,     y + h,
-    };
+    else if (mode == RECT_MODE_CENTER)
+    {
+        positions = new float[8] {
+            x - w/2,     y - h/2,
+            x + w/2,     y - h/2,
+            x + w/2,     y + h/2,
+            x - w/2,     y + h/2,
+        };
+    }
 
     unsigned int indices[]
     {
@@ -264,14 +278,54 @@ void Renderer::FillRect(float x, float y, float w, float h, Color c)
     glDeleteBuffers(1, &vb);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glDeleteBuffers(1, &ib);
+    delete[] positions;
 }
 
-void Renderer::DrawRect(float x, float y, float w, float h, Color c)
+void Renderer::DrawRect(float x, float y, float w, float h, RectMode mode, Color c)
 {
-    Line(x    , y    , x + w, y    , c);
-    Line(x + w, y    , x + w, y + h, c);
-    Line(x + w, y + h, x    , y + h, c);
-    Line(x    , y + h, x    , y    , c);
+    float *positions;
+    if (mode == RECT_MODE_TOP_LEFT)
+    {
+        positions = new float[8]{
+            x,     y,
+            x + w, y,
+            x + w, y + h,
+            x,     y + h,
+        };
+    }
+
+    else if (mode == RECT_MODE_CENTER)
+    {
+        positions = new float[8] {
+            x - w/2,     y - h/2,
+            x + w/2,     y - h/2,
+            x + w/2,     y + h/2,
+            x - w/2,     y + h/2,
+        };
+    }
+    // Line(positions[0], positions[1], positions[2], positions[3], c);
+    // Line(positions[2], positions[3], positions[4], positions[5], c);
+    // Line(positions[4], positions[5], positions[6], positions[7], c);
+    // Line(positions[6], positions[7], positions[0], positions[1], c);
+
+    unsigned int vb;
+    glGenBuffers(1, &vb);
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+
+    glBufferData(GL_ARRAY_BUFFER, 32, positions, GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+    Uniform4f("col", c.r, c.g, c.b, c.a);
+    Matrix4("uProj");
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, nullptr);
+
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDeleteBuffers(1, &vb);
+    delete[] positions;
 }
 
 
@@ -326,25 +380,43 @@ void Renderer::FillCircle(float x, float y, float radius, Color c)
 void Renderer::DrawCircle(float x, float y, float radius, Color c)
 {
     int numberOfSides = 1000;
-    int numberOfVertices = numberOfSides + 2;
+    int numberOfVertices = numberOfSides + 1;
     
     float twicePi = 2.0f * 3.14159f;
     
     float circleVerticesX[numberOfVertices];
     float circleVerticesY[numberOfVertices];
-    
-    circleVerticesX[0] = x;
-    circleVerticesY[0] = y;
 
-    circleVerticesX[1] = x + ( radius * cos( 1 *  twicePi / numberOfSides ) );
-    circleVerticesY[1] = y + ( radius * sin( 1 * twicePi / numberOfSides ) );
-    
-    for ( int i = 2; i < numberOfVertices; i++ )
+    for ( int i = 0; i < numberOfVertices; i++ )
     {
-        circleVerticesX[i] = x + ( radius * cos( i *  twicePi / numberOfSides ) );
-        circleVerticesY[i] = y + ( radius * sin( i * twicePi / numberOfSides ) );
-
-        Line(circleVerticesX[i - 1], circleVerticesY[i - 1], 
-             circleVerticesX[i]    , circleVerticesY[i], c);
+        circleVerticesX[i] = x + ( radius * cos( (i+1) *  twicePi / numberOfSides ) );
+        circleVerticesY[i] = y + ( radius * sin( (i+1) * twicePi / numberOfSides ) );
     }
+    
+    float allCircleVertices[numberOfVertices * 2];
+    
+    for ( int i = 0; i < numberOfVertices; i++ )
+    {
+        allCircleVertices[i * 2] = circleVerticesX[i];
+        allCircleVertices[i * 2 + 1] = circleVerticesY[i];
+    }
+
+    unsigned int vb;
+
+    glGenBuffers(1, &vb);
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(allCircleVertices), allCircleVertices, GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+    Uniform4f("col", c.r, c.g, c.b, c.a);
+    Matrix4("uProj");
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, nullptr);
+
+    glDrawArrays(GL_LINE_LOOP, 0, numberOfVertices);
+
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDeleteBuffers(1, &vb);
 }
