@@ -115,6 +115,8 @@ Renderer::Renderer(const std::string &title, int width, int height)
         exit(-1);
     }
 
+    depth = (width + height) / 2;
+
     glfwMakeContextCurrent(window);
 
     if (glewInit() != GLEW_OK)
@@ -123,7 +125,7 @@ Renderer::Renderer(const std::string &title, int width, int height)
         std::cin.get();
         exit(-1);
     }
-    projection = glm::ortho(0.0f, (float)width, (float)height, 0.0f, 0.0f, 1.0f);
+    projection = glm::ortho(0.0f, (float)width, (float)height, 0.0f, 0.0f, (float)depth);
     MakeShader();
 }
 
