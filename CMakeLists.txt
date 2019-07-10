@@ -29,8 +29,8 @@ else()
 
     target_link_libraries(
         libengine
-        glew32s
-        libglfw3
+        dep/lib/glew32s
+        dep/lib/libglfw3
     )
 
 endif()
