@@ -148,7 +148,7 @@ void Renderer::FillTriangle(float x1, float y1, float x2, float y2, float x3, fl
 
     unsigned int vb;
 
-    glCreateBuffers(1, &vb);
+    glGenBuffers(1, &vb);
     glBindBuffer(GL_ARRAY_BUFFER, vb);
 
     glBufferData(GL_ARRAY_BUFFER, 24, positions, GL_STATIC_DRAW);
@@ -194,7 +194,7 @@ void Renderer::Line(float x1, float y1, float x2, float y2, Color c)
 
     unsigned int vb;
 
-    glCreateBuffers(1, &vb);
+    glGenBuffers(1, &vb);
     glBindBuffer(GL_ARRAY_BUFFER, vb);
 
     glBufferData(GL_ARRAY_BUFFER, 16, positions, GL_STATIC_DRAW);
@@ -421,4 +421,42 @@ void Renderer::DrawCircle(float x, float y, float radius, Color c)
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glDeleteBuffers(1, &vb);
+}
+
+void Renderer::BeginDraw(drawEnum mode)
+{
+    drawMode = mode;
+}
+void Renderer::Vertex(float x, float y)
+{
+    drawPositions.push_back(x);
+    drawPositions.push_back(y);
+}
+void Renderer::EndDraw()
+{
+    uint vb;
+    glGenBuffers(1, &vb);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * drawPositions.size(), drawPositions.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, nullptr);
+
+    glUseProgram(shader);
+
+    Matrix4("uProj");
+    Uniform4f("col", drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+
+    glDrawArrays(drawMode, 0, drawPositions.size() / 2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    glDeleteBuffers(1, &vb);
+    drawColor = { 1, 1, 1, 1 };
+    drawPositions.clear();
+}
+void Renderer::Fill(Color c)
+{
+    drawColor = c;
 }

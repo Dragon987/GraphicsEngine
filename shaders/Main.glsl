@@ -1,5 +1,5 @@
 #shader vertex
-#version 430 core
+#version 330 core
 
 in vec4 pos;
 
@@ -11,7 +11,7 @@ void main()
 }
 
 #shader fragment
-#version 430 core
+#version 330 core
 
 uniform vec4 col;
 out vec4 color;

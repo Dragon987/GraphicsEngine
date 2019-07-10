@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include <vector>
 #include <string>
 
 #include <GL/glew.h>
@@ -18,6 +18,7 @@ struct Color
 #define DRAW_MODE_LINE_LOOP GL_LINE_LOOP
 #define DRAW_MODE_TRIANGLE_STRIP GL_TRIANGLE_STRIP
 #define DRAW_MODE_TRIANGLE_FAN GL_TRIANGLE_FAN
+#define DRAW_MODE_TRIANGLES GL_TRIANGLES
 
 typedef GLenum drawEnum;
 
@@ -29,6 +30,9 @@ private:
     unsigned int shader;
     std::string shaderFile = "/usr/include/shaders/Main.glsl";
     glm::mat4 projection;
+    drawEnum drawMode;
+    std::vector<float> drawPositions;
+    Color drawColor = { 1, 1, 1, 1 };
 
 private:
     inline int GetUniformLocation(const std::string &name) { return glGetUniformLocation(shader, name.c_str()); };
@@ -55,11 +59,10 @@ public:
     inline void SetShaderPath(const std::string &name) { shaderFile = name; };
     void MakeShader();
 
-    inline void BeginDraw(drawEnum mode) { glBegin(mode); };
-    inline void Vertex(float x, float y) { glVertex2f(x, y); };
-    inline void Vertex(float x, float y, float z) { glVertex3f(x, y, z); };
-    inline void EndDraw() { glEnd(); };
-    inline void Fill(Color c) { glColor4f(c.r, c.g, c.b, c.a); };
+    void BeginDraw(drawEnum mode);
+    void Vertex(float x, float y);
+    void EndDraw();
+    void Fill(Color c);
 
     void Background(Color c);
 
