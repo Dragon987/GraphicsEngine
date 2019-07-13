@@ -4,14 +4,14 @@ project(GraphicsEngine VERSION 1.0.0)
 option(LINUX "Set OS option" ON)
 
 add_library(
-    libengine
+    engine
     ./src/engine.cpp
     ./src/engine.hpp
 )
 if(LINUX)
 
     target_link_libraries(
-        libengine
+        engine
         -lGL 
         -lGLU 
         -lglfw3 
@@ -28,7 +28,7 @@ if(LINUX)
 else()
 
     target_link_libraries(
-        libengine
+        engine
         dep/lib/glew32s
         dep/lib/libglfw3
     )
@@ -43,6 +43,6 @@ add_executable(
 
 target_link_libraries(
     test
-    libengine
+    engine
 )
 
