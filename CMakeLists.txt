@@ -4,7 +4,7 @@ project(GraphicsEngine VERSION 1.0.0)
 option(LINUX "Set OS option" ON)
 
 add_library(
-    engine
+    engine SHARED
     ./src/engine.cpp
     ./src/engine.hpp
 )
