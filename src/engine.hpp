@@ -80,6 +80,8 @@ public:
     void FillCircle(float x, float y, float radius, Color c);
     void DrawCircle(float x, float y, float radius, Color c);
 
+    void GetMousePos(double *x, double *y);
+
 };
 
 

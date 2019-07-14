@@ -1,10 +1,14 @@
 #include "./../engine.hpp"
 
+#include <iostream>
+
 #define uint unsigned int
 
 int main()
 {
     Renderer r("title", 640, 480);
+
+    double x = 10, y = 10;
 
     while (!r.WindowShouldClose())
     {
@@ -17,9 +21,15 @@ int main()
 
         r.EndDraw();
 
+
+        r.GetMousePos(&x, &y);
+
+        std::cout << "X: " << x << ", Y: " << y << ".\n";
+
         r.BeginDraw(DRAW_MODE_LINES);
         r.Fill({0, 0, 1, 0});
-        r.Vertex(100, 100);
+
+        r.Vertex(x, y);
         r.Vertex(100, 200);
 
         r.EndDraw();

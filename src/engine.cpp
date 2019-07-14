@@ -114,6 +114,7 @@ Renderer::Renderer(const std::string &title, int width, int height)
         std::cin.get();
         exit(-1);
     }
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     depth = (width + height) / 2;
 
@@ -127,6 +128,11 @@ Renderer::Renderer(const std::string &title, int width, int height)
     }
     projection = glm::ortho(0.0f, (float)width, (float)height, 0.0f, 0.0f, (float)depth);
     MakeShader();
+}
+
+void Renderer::GetMousePos(double *x, double *y)
+{
+    glfwGetCursorPos(window, x, y);
 }
 
 void Renderer::Uniform4f(const std::string &name, float r, float g, float b, float a)
