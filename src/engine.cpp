@@ -114,7 +114,7 @@ Renderer::Renderer(const std::string &title, int width, int height)
         std::cin.get();
         exit(-1);
     }
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     depth = (width + height) / 2;
 

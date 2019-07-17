@@ -21,24 +21,10 @@ int main()
 
         r.EndDraw();
 
-
-        r.GetMousePos(&x, &y);
-
-        std::cout << "X: " << x << ", Y: " << y << ".\n";
-
-        r.BeginDraw(DRAW_MODE_LINES);
-        r.Fill({0, 0, 1, 0});
-
-        r.Vertex(x, y);
-        r.Vertex(100, 200);
-
-        r.EndDraw();
-
-        r.BeginDraw(DRAW_MODE_LINES);
-        r.Vertex(100, 200);
-        r.Vertex(200, 200);
-
-        r.EndDraw();
+        if (r.GetKey(-1) == GLFW_PRESS)
+        {
+            std::cout << 'A' << '\n';
+        }
 
         r.SwapBuffers();
 
