@@ -21,13 +21,11 @@ int main()
 
         r.EndDraw();
 
-        if (r.GetKey(-1) == GLFW_PRESS)
+        if (r.GetMouseButton(MOUSE_BUTTON_MIDDLE) == KEY_PRESS)
         {
             std::cout << 'A' << '\n';
         }
 
-        r.SwapBuffers();
-
-        r.PollEvents();
+        r.SPollEvents();
     }
 }

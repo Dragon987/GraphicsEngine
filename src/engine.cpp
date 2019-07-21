@@ -466,3 +466,9 @@ void Renderer::Fill(Color c)
 {
     drawColor = c;
 }
+
+void Renderer::SPollEvents()
+ { 
+    glfwSwapBuffers(window);
+    glfwPollEvents(); 
+ }

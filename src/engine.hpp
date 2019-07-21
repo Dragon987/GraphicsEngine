@@ -136,6 +136,23 @@
 
 #define KEY_LAST               KEY_MENU
 
+#define MOUSE_BUTTON_1         0
+#define MOUSE_BUTTON_2         1
+#define MOUSE_BUTTON_3         2
+#define MOUSE_BUTTON_4         3
+#define MOUSE_BUTTON_5         4
+#define MOUSE_BUTTON_6         5
+#define MOUSE_BUTTON_7         6
+#define MOUSE_BUTTON_8         7
+#define MOUSE_BUTTON_LAST      MOUSE_BUTTON_8
+#define MOUSE_BUTTON_LEFT      MOUSE_BUTTON_1
+#define MOUSE_BUTTON_RIGHT     MOUSE_BUTTON_2
+#define MOUSE_BUTTON_MIDDLE    MOUSE_BUTTON_3
+
+#define KEY_RELEASE                0
+#define KEY_PRESS                  1
+#define KEY_REPEAT                 2
+
 struct Color
 {
     float r, g, b, a;
@@ -181,6 +198,8 @@ public:
     ~Renderer();
 
     inline bool WindowShouldClose() { return glfwWindowShouldClose(window); };
+    void SPollEvents();
+
     inline void SwapBuffers() { glfwSwapBuffers(window); };
     inline void PollEvents() { glfwPollEvents(); };
 
@@ -210,6 +229,7 @@ public:
 
     void GetMousePos(double *x, double *y);
     inline int GetKey(int key) { return glfwGetKey(window, key); };
+    inline int GetMouseButton(int button) { return glfwGetMouseButton(window, button); };
 };
 
 
