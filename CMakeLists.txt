@@ -12,17 +12,8 @@ if(LINUX)
 
     target_link_libraries(
         engine
-        -lGL 
-        -lGLU 
-        -lglfw3 
-        -lX11 
-        -lXxf86vm 
-        -lXrandr 
-        -lpthread 
-        -lXi 
-        -ldl 
-        -lXinerama 
-        -lXcursor 
+        -lGL
+        -lglfw
         -lGLEW
     )
 else()
