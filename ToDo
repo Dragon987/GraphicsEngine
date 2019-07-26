@@ -1,3 +1,4 @@
-
-
-Add texture support;
+Implement Renderer::BeginDraw
+    - Uzmi mod u DrawBegin()
+    - Sa svaki Vertex ubaci u std::vector
+    - Sa EndDraw() nacrtaj i izbrisi std::vector
