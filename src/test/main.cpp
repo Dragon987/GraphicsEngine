@@ -10,22 +10,14 @@ int main()
 
     double x = 10, y = 10;
 
+        float a = 0.0f;
     while (!r.WindowShouldClose())
     {
         r.Background({0.0f, 0.0f, 0.0f, 0.0f});
 
-        r.BeginDraw(DRAW_MODE_LINES);
-        r.Fill({1, 0, 0, 0});
-        r.Vertex(0, 0);
-        r.Vertex(640, 480);
+        r.FillRect(200, 200, 100, 100, Renderer::RECT_MODE_CENTER, a, {1, 0, 0, 1});
 
-        r.EndDraw();
-
-        if (r.GetMouseButton(MOUSE_BUTTON_MIDDLE) == KEY_PRESS)
-        {
-            std::cout << 'A' << '\n';
-        }
-
+        a += 0.01;
         r.SPollEvents();
     }
 }
