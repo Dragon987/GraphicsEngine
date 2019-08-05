@@ -6,26 +6,26 @@
 
 int main()
 {
-    Renderer r("title", 640, 480);
+    Renderer r("title", 500, 500);
 
     double x = 10, y = 10;
 
+    float a = 0.0f;
     while (!r.WindowShouldClose())
     {
-        r.Background({0.0f, 0.0f, 0.0f, 0.0f});
+        r.Background({0.2f, 0.0f, 0.0f, 0.0f});
 
         r.BeginDraw(DRAW_MODE_LINES);
-        r.Fill({1, 0, 0, 0});
+
+        r.Translate(200, 200);
+        r.Rotate(a);
+
+        r.Vertex(-100, -100);
         r.Vertex(0, 0);
-        r.Vertex(640, 480);
 
         r.EndDraw();
 
-        if (r.GetMouseButton(MOUSE_BUTTON_MIDDLE) == KEY_PRESS)
-        {
-            std::cout << 'A' << '\n';
-        }
-
+        a += 0.01;
         r.SPollEvents();
     }
 }

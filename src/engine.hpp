@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -178,11 +179,16 @@ private:
     drawEnum drawMode;
     std::vector<float> drawPositions;
     Color drawColor = { 1, 1, 1, 1 };
+    unsigned int texture;
+    bool pushed = false;
+    glm::mat4 model = glm::mat4(0.0f);
+    float rotAngle = 0.0f;
 
 private:
     inline int GetUniformLocation(const std::string &name) { return glGetUniformLocation(shader, name.c_str()); };
     void Uniform4f(const std::string &name, float r, float g, float b, float a);
-    void Matrix4(std::string name);
+    void Matrix4(const std::string &name);
+    inline void Uniform1i(const std::string &name, float val) { glUniform1i(GetUniformLocation(name), val); };
 
 public:
     int width, height, depth;
@@ -208,8 +214,11 @@ public:
 
     void BeginDraw(drawEnum mode);
     void Vertex(float x, float y);
-    void EndDraw();
     void Fill(Color c);
+    void Rotate(float a);
+    void Translate(float x, float y);
+    void EndDraw();
+
 
     void Background(Color c);
 
@@ -219,10 +228,14 @@ public:
     void Line(float x1, float y1, float x2, float y2, Color c);
 
     void FillTriangle(float x1, float y1, float x2, float y2, float x3, float y3, Color c);
+    void FillTriangle(float x1, float y1, float x2, float y2, float x3, float y3, float a, Color c);
     void DrawTriangle(float x1, float y1, float x2, float y2, float x3, float y3, Color c);
+    void DrawTriangle(float x1, float y1, float x2, float y2, float x3, float y3, float a, Color c);
 
     void FillRect(float x, float y, float w, float h, RectMode mode, Color c);
     void DrawRect(float x, float y, float w, float h, RectMode mode, Color c);
+    void FillRect(float x, float y, float w, float h, RectMode mode, float a, Color c);
+    void DrawRect(float x, float y, float w, float h, RectMode mode, float a, Color c);
     
     void FillCircle(float x, float y, float radius, Color c);
     void DrawCircle(float x, float y, float radius, Color c);
@@ -230,6 +243,9 @@ public:
     void GetMousePos(double *x, double *y);
     inline int GetKey(int key) { return glfwGetKey(window, key); };
     inline int GetMouseButton(int button) { return glfwGetMouseButton(window, button); };
+
+    void LoadTexture(const std::string &file, float x, float y, float w, float h, bool flip);
+    void LoadTexture(const std::string &file, float x, float y, float w, float h, float a, bool flip);
 };
 
 

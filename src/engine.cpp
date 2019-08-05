@@ -2,7 +2,16 @@
 #include <fstream>
 #include <sstream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
 #include "./engine.hpp"
+
+
+static void SetMat4(glm::mat4 &m4, unsigned int &shader, const std::string &name)
+{
+    glUniformMatrix4fv(glGetUniformLocation(shader, name.c_str()), 1, GL_FALSE, &m4[0][0]);
+}
 
 
 static unsigned int CompileShader(unsigned int type, const std::string &src)
@@ -79,6 +88,9 @@ void Renderer::MakeShader()
 
     shader = glCreateProgram();
 
+    glBindAttribLocation(shader, 0, "pos");
+    glBindAttribLocation(shader, 1, "texCoord");
+
     glAttachShader(shader, ss.v);
     glAttachShader(shader, ss.f);
     glLinkProgram(shader);
@@ -128,6 +140,9 @@ Renderer::Renderer(const std::string &title, int width, int height)
     }
     projection = glm::ortho(0.0f, (float)width, (float)height, 0.0f, 0.0f, (float)depth);
     MakeShader();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void Renderer::GetMousePos(double *x, double *y)
@@ -144,32 +159,88 @@ void Renderer::Uniform4f(const std::string &name, float r, float g, float b, flo
 
 
 
-void Renderer::FillTriangle(float x1, float y1, float x2, float y2, float x3, float y3, Color c)
+void Renderer::FillTriangle(float x1, float y1, float x2, float y2, float x3, float y3, float a, Color c)
 {
-    float positions[] = {
-        x1, y1,
-        x2, y2,
-        x3, y3
+    float cX = (x1 + x2 + x3) / 3.0f;
+    float cY = (y1 + y2 + y3) / 3.0f;
+
+    float pos[] = {
+        x1 - cX, y1 - cY,
+        x2 - cX, y2 - cY,
+        x3 - cX, y3 - cY
     };
 
+    using namespace glm;
+
+    model = translate(mat4(1.0f), vec3(cX, cY, 0));
+    model *= rotate(mat4(1.0f), a, vec3(0, 0, 1));
+
+    glUseProgram(shader);
+
+    mat4 MP = projection * model;
+
+    SetMat4(MP, shader, "uProj");
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+
     unsigned int vb;
-
     glGenBuffers(1, &vb);
-    glBindBuffer(GL_ARRAY_BUFFER, vb);
 
-    glBufferData(GL_ARRAY_BUFFER, 24, positions, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, nullptr);
 
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    glDeleteBuffers(1, &vb);
+
+    return;
+}
+
+void Renderer::FillTriangle(float x1, float y1, float x2, float y2, float x3, float y3, Color c)
+{
+    float cX = (x1 + x2 + x3) / 3.0f;
+    float cY = (y1 + y2 + y3) / 3.0f;
+
+    float pos[] = {
+        x1 - cX, y1 - cY,
+        x2 - cX, y2 - cY,
+        x3 - cX, y3 - cY
+    };
+
+    using namespace glm;
+
+    model = translate(mat4(1.0f), vec3(cX, cY, 0));
+    model *= rotate(mat4(1.0f), 0.0f, vec3(0, 0, 1));
+
     glUseProgram(shader);
-    Uniform4f("col", c.r, c.g, c.b, c.a);
-    Matrix4("uProj");
+
+    mat4 MP = projection * model;
+
+    SetMat4(MP, shader, "uProj");
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+
+    unsigned int vb;
+    glGenBuffers(1, &vb);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, nullptr);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
     glDeleteBuffers(1, &vb);
+
+    return;
 }
 
 Renderer::~Renderer()
@@ -184,15 +255,22 @@ void Renderer::Background(Color c)
     glClearColor(c.r, c.g, c.b, c.a);
 }
 
-void Renderer::Matrix4(const std::string name)
+void Renderer::Matrix4(const std::string &name)
 {
     int loc = GetUniformLocation(name);
+
+    //std::cout << name << " " << loc << '\n';
 
     glUniformMatrix4fv(loc, 1, GL_FALSE, &projection[0][0]);
 }
 
 void Renderer::Line(float x1, float y1, float x2, float y2, Color c)
 {
+    if (pushed)
+    {
+        return;
+    }
+
     float positions[] = {
         x1, y1,
         x2, y2
@@ -209,8 +287,10 @@ void Renderer::Line(float x1, float y1, float x2, float y2, Color c)
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, nullptr);
 
     glUseProgram(shader);
-    Uniform4f("col", c.r, c.g, c.b, c.a);
+    Uniform1i("useTextures", 0); 
     Matrix4("uProj");
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+
 
     glDrawArrays(GL_LINES, 0, 2);
 
@@ -228,15 +308,102 @@ void Renderer::Translate()
     projection = glm::ortho(0.0f, (float)width, (float)height, 0.0f, 0.0f, 1.0f);
 }
 
+static float absolute(float x)
+{
+    return (x >= 0.0f) ? x : -x;
+}
+
+void Renderer::DrawTriangle(float x1, float y1, float x2, float y2, float x3, float y3, float a, Color c)
+{
+    float cX = (x1 + x2 + x3) / 3.0f;
+    float cY = (y1 + y2 + y3) / 3.0f;
+
+    float pos[] = {
+        x1 - cX, y1 - cY,
+        x2 - cX, y2 - cY,
+        x3 - cX, y3 - cY
+    };
+
+    using namespace glm;
+
+    model = translate(mat4(1.0f), vec3(cX, cY, 0));
+    model *= rotate(mat4(1.0f), a, vec3(0, 0, 1));
+
+    glUseProgram(shader);
+
+    mat4 MP = projection * model;
+
+    SetMat4(MP, shader, "uProj");
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+
+    unsigned int vb;
+    glGenBuffers(1, &vb);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, nullptr);
+
+    glDrawArrays(GL_LINE_LOOP, 0, 3);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    glDeleteBuffers(1, &vb);
+
+    return;
+}
+
 void Renderer::DrawTriangle(float x1, float y1, float x2, float y2, float x3, float y3, Color c)
 {
-    Line(x1, y1, x2, y2, c);
-    Line(x1, y1, x3, y3, c);
-    Line(x3, y3, x2, y2, c);
+    float cX = (x1 + x2 + x3) / 3.0f;
+    float cY = (y1 + y2 + y3) / 3.0f;
+
+    float pos[] = {
+        x1 - cX, y1 - cY,
+        x2 - cX, y2 - cY,
+        x3 - cX, y3 - cY
+    };
+
+    using namespace glm;
+
+    model = translate(mat4(1.0f), vec3(cX, cY, 0));
+    model *= rotate(mat4(1.0f), 0.0f, vec3(0, 0, 1));
+
+    glUseProgram(shader);
+
+    mat4 MP = projection * model;
+
+    SetMat4(MP, shader, "uProj");
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+
+    unsigned int vb;
+    glGenBuffers(1, &vb);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, nullptr);
+
+    glDrawArrays(GL_LINE_LOOP, 0, 3);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    glDeleteBuffers(1, &vb);
+
+    return;
 }
 
 void Renderer::FillRect(float x, float y, float w, float h, RectMode mode, Color c)
 {
+    if (pushed)
+    {
+        return;
+    }
+
     unsigned int vb, ib;
     float *positions;
     if (mode == RECT_MODE_TOP_LEFT)
@@ -274,7 +441,8 @@ void Renderer::FillRect(float x, float y, float w, float h, RectMode mode, Color
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 24, indices, GL_STATIC_DRAW);
 
     glUseProgram(shader);
-    Uniform4f("col", c.r, c.g, c.b, c.a);
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
     Matrix4("uProj");
 
     glEnableVertexAttribArray(0);
@@ -291,6 +459,10 @@ void Renderer::FillRect(float x, float y, float w, float h, RectMode mode, Color
 
 void Renderer::DrawRect(float x, float y, float w, float h, RectMode mode, Color c)
 {
+    if (pushed)
+    {
+        return;
+    }
     float *positions;
     if (mode == RECT_MODE_TOP_LEFT)
     {
@@ -323,7 +495,8 @@ void Renderer::DrawRect(float x, float y, float w, float h, RectMode mode, Color
     glBufferData(GL_ARRAY_BUFFER, 32, positions, GL_STATIC_DRAW);
 
     glUseProgram(shader);
-    Uniform4f("col", c.r, c.g, c.b, c.a);
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
     Matrix4("uProj");
 
     glEnableVertexAttribArray(0);
@@ -339,7 +512,7 @@ void Renderer::DrawRect(float x, float y, float w, float h, RectMode mode, Color
 
 void Renderer::FillCircle(float x, float y, float radius, Color c)
 {
-    int numberOfSides = 1000;
+    int numberOfSides = 10000;
     int numberOfVertices = numberOfSides + 2;
     
     float twicePi = 2.0f * 3.14159f;
@@ -371,7 +544,8 @@ void Renderer::FillCircle(float x, float y, float radius, Color c)
     glBufferData(GL_ARRAY_BUFFER, sizeof(allCircleVertices), allCircleVertices, GL_STATIC_DRAW);
 
     glUseProgram(shader);
-    Uniform4f("col", c.r, c.g, c.b, c.a);
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
     Matrix4("uProj");
 
     glEnableVertexAttribArray(0);
@@ -387,7 +561,7 @@ void Renderer::FillCircle(float x, float y, float radius, Color c)
 
 void Renderer::DrawCircle(float x, float y, float radius, Color c)
 {
-    int numberOfSides = 1000;
+    int numberOfSides = 10000;
     int numberOfVertices = numberOfSides + 1;
     
     float twicePi = 2.0f * 3.14159f;
@@ -416,7 +590,8 @@ void Renderer::DrawCircle(float x, float y, float radius, Color c)
     glBufferData(GL_ARRAY_BUFFER, sizeof(allCircleVertices), allCircleVertices, GL_STATIC_DRAW);
 
     glUseProgram(shader);
-    Uniform4f("col", c.r, c.g, c.b, c.a);
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
     Matrix4("uProj");
 
     glEnableVertexAttribArray(0);
@@ -432,12 +607,15 @@ void Renderer::DrawCircle(float x, float y, float radius, Color c)
 void Renderer::BeginDraw(drawEnum mode)
 {
     drawMode = mode;
+    model = glm::mat4(1.0f);
 }
+
 void Renderer::Vertex(float x, float y)
 {
     drawPositions.push_back(x);
     drawPositions.push_back(y);
 }
+
 void Renderer::EndDraw()
 {
     uint vb;
@@ -449,10 +627,12 @@ void Renderer::EndDraw()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, nullptr);
 
-    glUseProgram(shader);
+    glm::mat4 MP = projection * model;
 
-    Matrix4("uProj");
-    Uniform4f("col", drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+    glUseProgram(shader);
+    Uniform1i("useTextures", 0); 
+    SetMat4(MP, shader, "uProj");
+    Uniform4f("uColor", drawColor.r, drawColor.g, drawColor.b, drawColor.a);
 
     glDrawArrays(drawMode, 0, drawPositions.size() / 2);
 
@@ -461,10 +641,22 @@ void Renderer::EndDraw()
     glDeleteBuffers(1, &vb);
     drawColor = { 1, 1, 1, 1 };
     drawPositions.clear();
+    model = glm::mat4(1.0);
 }
+
 void Renderer::Fill(Color c)
 {
     drawColor = c;
+}
+
+void Renderer::Translate(float x, float y)
+{
+    model *= glm::translate(glm::mat4(1.0), glm::vec3(x, y, 0));
+}
+
+void Renderer::Rotate(float a)
+{
+    model *= glm::rotate(glm::mat4(1.0), a, glm::vec3(0, 0, 1));
 }
 
 void Renderer::SPollEvents()
@@ -472,3 +664,277 @@ void Renderer::SPollEvents()
     glfwSwapBuffers(window);
     glfwPollEvents(); 
  }
+
+ void Renderer::LoadTexture(const std::string &file, float x, float y, float w, float h, bool flip)
+ {
+    stbi_set_flip_vertically_on_load(flip);
+
+    int iW, iH, iC;
+
+    unsigned char * imgBuffer = stbi_load(file.c_str(), &iW, &iH, &iC, 4);
+
+    //std::cout << iW << " " << iH << ' ' << iC << '\n';
+
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glActiveTexture(GL_TEXTURE0);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, iW, iH, 0, GL_RGBA, GL_UNSIGNED_BYTE, imgBuffer);
+
+    if (pushed)
+    {
+        return;
+    }
+
+    float pos[] = 
+    {
+        // real                 tex
+        x, y,                   0.0, 0.0,
+        x + w, y,               1.0, 0.0,
+        x + w, y + h,         1.0, 1.0,
+        x, y + h,              0.0, 1.0
+    };
+
+    unsigned int ind[] = 
+    {
+        0, 1, 2,
+        0, 3, 2
+    };
+
+    unsigned int vb, ib;
+
+    glGenBuffers(1, &vb);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &ib);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ind), ind, GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, 0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, (const void *)8);
+
+    glUniform1i(glGetUniformLocation(shader, "useTextures"), 1);
+    glUniform1i(glGetUniformLocation(shader, "tex"), 0);
+    glUniformMatrix4fv(glGetUniformLocation(shader, "uProj"), 1, GL_FALSE, &projection[0][0]);
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+
+    glDeleteBuffers(1, &vb);
+    glDeleteBuffers(1, &ib);
+
+}
+
+
+void Renderer::FillRect(float x, float y, float w, float h, RectMode mode, float a, Color c)
+{
+    float cX, cY;
+    if (mode == RECT_MODE_CENTER)
+    {
+        cX = x;
+        cY = y;
+    }
+
+    else if (mode == RECT_MODE_TOP_LEFT)
+    {
+        cX = x + w / 2;
+        cY = y + h / 2;
+    }
+
+    float pos[] = {
+        -(w / 2.0f), -(h / 2.0f),
+        +(w / 2.0f), -(h / 2.0f),
+        +(w / 2.0f), +(h / 2.0f),
+        -(w / 2.0f), +(h / 2.0f)
+    };
+
+    unsigned int ind[] = {
+        0, 3, 2,
+        0, 1, 2
+    };
+
+    unsigned int vb, ib;
+
+    glGenBuffers(1, &vb);
+    glGenBuffers(1, &ib);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ind), ind, GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+    
+    using namespace glm;
+    model = mat4(1.0f);
+    model *= translate(mat4(1.0), vec3(cX, cY, 0)) * rotate(mat4(1.0), a, vec3(0, 0, 1));
+    mat4 MP = projection * model;
+
+    SetMat4(MP, shader, "uProj");
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, 0);
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    glUseProgram(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    glDeleteBuffers(1, &vb);
+    glDeleteBuffers(1, &ib);
+
+}
+void Renderer::DrawRect(float x, float y, float w, float h, RectMode mode, float a, Color c)
+{
+    float cX, cY;
+    if (mode == RECT_MODE_CENTER)
+    {
+        cX = x;
+        cY = y;
+    }
+    else if (mode == RECT_MODE_TOP_LEFT)
+    {
+        cX = x + w / 2;
+        cY = y + h / 2;
+    }
+
+    float pos[] = {
+        -w / 2, -h / 2, // TL
+        +w / 2, -h / 2, // TR
+        +w / 2, +h / 2, // BR
+        -w / 2, +h / 2 // BL
+    };
+
+    unsigned int vb;
+
+    glGenBuffers(1, &vb);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+    
+    using namespace glm;
+    model = translate(mat4(1.0), vec3(cX, cY, 0)) * rotate(mat4(1.0), a, vec3(0, 0, 1));
+    mat4 MP = projection * model;
+
+    SetMat4(MP, shader, "uProj");
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, 0);
+
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+    glUseProgram(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glDeleteBuffers(1, &vb);
+
+}
+
+void Renderer::LoadTexture(const std::string &file, float x, float y, float w, float h, float a, bool flip)
+{
+    stbi_set_flip_vertically_on_load(flip);
+
+    int iW, iH, iC;
+
+    unsigned char * imgBuffer = stbi_load(file.c_str(), &iW, &iH, &iC, 4);
+
+    //std::cout << iW << " " << iH << ' ' << iC << '\n';
+
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glActiveTexture(GL_TEXTURE0);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, iW, iH, 0, GL_RGBA, GL_UNSIGNED_BYTE, imgBuffer);
+
+    if (pushed)
+    {
+        return;
+    }
+
+    float cX = x + w / 2.0f, cY = y + h / 2.0f;
+
+    float pos[] = 
+    {
+        // real                 tex
+        -w / 2, -h / 2,           0.0, 0.0,
+        +w / 2, -h / 2,           1.0, 0.0,
+        +w / 2, +h / 2,           1.0, 1.0,
+        -w / 2, +h / 2,           0.0, 1.0
+    };
+
+    unsigned int ind[] = 
+    {
+        0, 1, 2,
+        0, 3, 2
+    };
+
+    unsigned int vb, ib;
+
+    glGenBuffers(1, &vb);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &ib);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ind), ind, GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, 0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, (const void *)8);
+
+    glUniform1i(glGetUniformLocation(shader, "useTextures"), 1);
+    glUniform1i(glGetUniformLocation(shader, "tex"), 0);
+
+    using namespace glm;
+    model = translate(mat4(1.0), vec3(cX, cY, 0)) * rotate(mat4(1.0), a, vec3(0, 0, 1));
+
+    mat4 MP = projection * model;
+
+    glUniformMatrix4fv(glGetUniformLocation(shader, "uProj"), 1, GL_FALSE, &MP[0][0]);
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+
+    glDeleteBuffers(1, &vb);
+    glDeleteBuffers(1, &ib);
+}
