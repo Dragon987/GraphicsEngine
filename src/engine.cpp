@@ -751,7 +751,6 @@ void Renderer::FillRect(float x, float y, float w, float h, RectMode mode, float
         cX = x;
         cY = y;
     }
-
     else if (mode == RECT_MODE_TOP_LEFT)
     {
         cX = x + w / 2;
@@ -793,46 +792,7 @@ void Renderer::FillRect(float x, float y, float w, float h, RectMode mode, float
     SetMat4(MP, shader, "uProj");
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, 0);
-
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-    glUseProgram(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    glDeleteBuffers(1, &vb);
-    glDeleteBuffers(1, &ib);
-
-}
-void Renderer::DrawRect(float x, float y, float w, float h, RectMode mode, float a, Color c)
-{
-    float cX, cY;
-    if (mode == RECT_MODE_CENTER)
-    {
-        cX = x;
-        cY = y;
-    }
-    else if (mode == RECT_MODE_TOP_LEFT)
-    {
-        cX = x + w / 2;
-        cY = y + h / 2;
-    }
-
-    float pos[] = {
-        -w / 2, -h / 2, // TL
-        +w / 2, -h / 2, // TR
-        +w / 2, +h / 2, // BR
-        -w / 2, +h / 2 // BL
-    };
-
-    unsigned int vb;
-
     glGenBuffers(1, &vb);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vb);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW);
-
     glUseProgram(shader);
     Uniform1i("useTextures", 0);
     Uniform4f("uColor", c.r, c.g, c.b, c.a);
