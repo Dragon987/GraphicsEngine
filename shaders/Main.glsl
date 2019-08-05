@@ -1,22 +1,35 @@
 #shader vertex
-#version 330 core
+#version 130
 
 in vec4 pos;
+in vec2 texCoord;
+
+out vec2 fTexCoord;
 
 uniform mat4 uProj;
 
 void main()
 {
-    gl_Position = uProj * pos;
+    fTexCoord = texCoord;
+    gl_Position = uProj * pos;// * uProj;
 }
 
 #shader fragment
-#version 330 core
+#version 130
 
-uniform vec4 col;
 out vec4 color;
+uniform sampler2D tex;
+
+in vec2 fTexCoord;
+
+uniform int useTextures;
+
+uniform vec4 uColor;
 
 void main()
 {
-    color = col;
+    if (useTextures == 1)
+        color = texture(tex, fTexCoord);
+    else
+        color = uColor;
 }
