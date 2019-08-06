@@ -571,8 +571,8 @@ void Renderer::DrawCircle(float x, float y, float radius, Color c)
 
     for ( int i = 0; i < numberOfVertices; i++ )
     {
-        circleVerticesX[i] = x + ( radius * cos( (i+1) *  twicePi / numberOfSides ) );
-        circleVerticesY[i] = y + ( radius * sin( (i+1) * twicePi / numberOfSides ) );
+        circleVerticesX[i] = x + (radius * cos((i + 1) * twicePi / numberOfSides));
+        circleVerticesY[i] = y + (radius * sin((i + 1) * twicePi / numberOfSides));
     }
     
     float allCircleVertices[numberOfVertices * 2];
@@ -893,4 +893,185 @@ void Renderer::LoadTexture(const std::string &file, float x, float y, float w, f
 
     glDeleteBuffers(1, &vb);
     glDeleteBuffers(1, &ib);
+}
+
+
+void Renderer::DrawEllipse(float x, float y, float width, float height, Color c)
+{
+    int numberOfSides = 10000;
+    int numberOfVertices = numberOfSides + 1;
+    
+    float twicePi = 2.0f * 3.14159f;
+    float allCircleVertices[numberOfVertices * 2];
+
+    for ( int i = 0; i < numberOfVertices; i++ )
+    {
+        allCircleVertices[i * 2] = (width * cos((i + 1) * twicePi / numberOfSides));
+        allCircleVertices[i * 2 + 1] = (width * sin((i + 1) * twicePi / numberOfSides));
+    }
+
+    using namespace glm;
+
+    model *= translate(mat4(1.0f), vec3(x, y, 0)) *
+            scale(mat4(1.0f), vec3(1.0f, height / width, 1.0f));
+
+    uint vb;
+
+    glGenBuffers(1, &vb);
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(allCircleVertices), allCircleVertices, GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+    mat4 MP = projection * model;
+    model = mat4(1.0f);
+    SetMat4(MP, shader, "uProj");
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, 0);
+
+    glDrawArrays(GL_LINE_LOOP, 0, numberOfVertices);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    
+    glDeleteBuffers(1, &vb);
+}
+
+void Renderer::DrawEllipse(float x, float y, float width, float height, float a, Color c)
+{
+    int numberOfSides = 10000;
+    int numberOfVertices = numberOfSides + 1;
+    
+    float twicePi = 2.0f * 3.14159f;
+    float allCircleVertices[numberOfVertices * 2];
+
+    for ( int i = 0; i < numberOfVertices; i++ )
+    {
+        allCircleVertices[i * 2] = (width * cos((i + 1) * twicePi / numberOfSides));
+        allCircleVertices[i * 2 + 1] = (width * sin((i + 1) * twicePi / numberOfSides));
+    }
+
+    using namespace glm;
+
+    model = translate(mat4(1.0f), vec3(x, y, 0)) *
+            rotate(mat4(1.0f), a, vec3(0, 0, 1)) *
+            scale(mat4(1.0f), vec3(1.0f, height / width, 1.0f));
+
+    uint vb;
+
+    glGenBuffers(1, &vb);
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(allCircleVertices), allCircleVertices, GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+    mat4 MP = projection * model;
+    model = mat4(1.0f);
+    SetMat4(MP, shader, "uProj");
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, 0);
+
+    glDrawArrays(GL_LINE_LOOP, 0, numberOfVertices);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    
+    glDeleteBuffers(1, &vb);
+}
+
+void Renderer::FillEllipse(float x, float y, float width, float height, Color c)
+{
+    int numberOfSides = 10000;
+    int numberOfVertices = numberOfSides + 1;
+    
+    float twicePi = 2.0f * 3.14159f;
+    float allCircleVertices[numberOfVertices * 2];
+
+    for ( int i = 1; i < numberOfVertices; i++ )
+    {
+        allCircleVertices[i * 2] = (width * cos((i + 1) * twicePi / numberOfSides));
+        allCircleVertices[i * 2 + 1] = (width * sin((i + 1) * twicePi / numberOfSides));
+    }
+
+    allCircleVertices[0] = allCircleVertices[1] = 0.0f;
+
+    using namespace glm;
+
+    model *= translate(mat4(1.0f), vec3(x, y, 0)) *
+            scale(mat4(1.0f), vec3(1.0f, height / width, 1.0f));
+
+    uint vb;
+
+    glGenBuffers(1, &vb);
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(allCircleVertices), allCircleVertices, GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+    mat4 MP = projection * model;
+    model = mat4(1.0f);
+    SetMat4(MP, shader, "uProj");
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, 0);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, numberOfVertices);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    
+    glDeleteBuffers(1, &vb);
+}
+
+void Renderer::FillEllipse(float x, float y, float width, float height, float a, Color c)
+{
+    int numberOfSides = 10000;
+    int numberOfVertices = numberOfSides + 1;
+    
+    float twicePi = 2.0f * 3.14159f;
+    float allCircleVertices[numberOfVertices * 2];
+
+    for ( int i = 0; i < numberOfVertices; i++ )
+    {
+        allCircleVertices[i * 2] = (width * cos((i + 1) * twicePi / numberOfSides));
+        allCircleVertices[i * 2 + 1] = (width * sin((i + 1) * twicePi / numberOfSides));
+    }
+
+    using namespace glm;
+
+    model = translate(mat4(1.0f), vec3(x, y, 0)) *
+            rotate(mat4(1.0f), a, vec3(0, 0, 1)) *
+            scale(mat4(1.0f), vec3(1.0f, height / width, 1.0f));
+
+    uint vb;
+
+    glGenBuffers(1, &vb);
+    glBindBuffer(GL_ARRAY_BUFFER, vb);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(allCircleVertices), allCircleVertices, GL_STATIC_DRAW);
+
+    glUseProgram(shader);
+    Uniform1i("useTextures", 0);
+    Uniform4f("uColor", c.r, c.g, c.b, c.a);
+    mat4 MP = projection * model;
+    model = mat4(1.0f);
+    SetMat4(MP, shader, "uProj");
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, 0);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, numberOfVertices);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    
+    glDeleteBuffers(1, &vb);
 }

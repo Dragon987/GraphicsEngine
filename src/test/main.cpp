@@ -13,17 +13,12 @@ int main()
     float a = 0.0f;
     while (!r.WindowShouldClose())
     {
-        r.Background({0.2f, 0.0f, 0.0f, 0.0f});
+        r.Background({0.0f, 0.0f, 0.0f, 0.0f});
 
-        r.BeginDraw(DRAW_MODE_LINES);
+        r.FillEllipse(350, 250, 100, 120, a, {1, 1, 1, 1});
+        r.DrawCircle(250, 250, 100, {0, 1, 0, 1});
 
-        r.Translate(200, 200);
-        r.Rotate(a);
-
-        r.Vertex(-100, -100);
-        r.Vertex(0, 0);
-
-        r.EndDraw();
+        
 
         a += 0.01;
         r.SPollEvents();

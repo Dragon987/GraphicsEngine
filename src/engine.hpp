@@ -241,6 +241,11 @@ public:
     void FillCircle(float x, float y, float radius, Color c);
     void DrawCircle(float x, float y, float radius, Color c);
 
+    void FillEllipse(float x, float y, float width, float height, Color c);
+    void FillEllipse(float x, float y, float width, float height, float angle, Color c);
+    void DrawEllipse(float x, float y, float width, float height, Color c);
+    void DrawEllipse(float x, float y, float width, float height, float angle, Color c);
+
     void GetMousePos(double *x, double *y);
     inline int GetKey(int key) { return glfwGetKey(window, key); };
     inline int GetMouseButton(int button) { return glfwGetMouseButton(window, button); };

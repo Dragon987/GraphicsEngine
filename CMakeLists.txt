@@ -39,10 +39,12 @@ endif()
 add_executable(
     test
     src/test/main.cpp
+    src/engine.cpp
 )
 
 target_link_libraries(
     test
-    engine
+    -lGL
+    -lGLEW
+    -lglfw
 )
-
