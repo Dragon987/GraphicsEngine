@@ -796,10 +796,6 @@ void Renderer::FillRect(float x, float y, float w, float h, RectMode mode, float
     glUseProgram(shader);
     Uniform1i("useTextures", 0);
     Uniform4f("uColor", c.r, c.g, c.b, c.a);
-    
-    using namespace glm;
-    model = translate(mat4(1.0), vec3(cX, cY, 0)) * rotate(mat4(1.0), a, vec3(0, 0, 1));
-    mat4 MP = projection * model;
 
     SetMat4(MP, shader, "uProj");
 
