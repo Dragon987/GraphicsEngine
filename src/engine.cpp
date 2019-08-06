@@ -157,6 +157,28 @@ void Renderer::Uniform4f(const std::string &name, float r, float g, float b, flo
     glUniform4f(loc, r, g, b, a);
 }
 
+void Renderer::FrameRate(int fr)
+{
+	timePoint2 = clock();
+
+	auto elapsed = timePoint2 - timePoint1;
+
+	float sleepFor = (1.0f / (float)fr) - ((float)elapsed / (float)CLOCKS_PER_SEC);
+	// #include <iostream>
+	// std::cout << sleepFor << '\n';
+
+	#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+
+	Sleep(sleepFor);
+
+	#else
+
+	usleep(sleepFor * 1000000.0f);
+
+	#endif // Windows
+
+	timePoint1 = clock();
+}
 
 
 void Renderer::FillTriangle(float x1, float y1, float x2, float y2, float x3, float y3, float a, Color c)

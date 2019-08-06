@@ -3,6 +3,13 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <time.h>
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif // Windows
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -183,6 +190,8 @@ private:
     bool pushed = false;
     glm::mat4 model = glm::mat4(0.0f);
     float rotAngle = 0.0f;
+	clock_t timePoint1 = 0;
+	clock_t timePoint2 = 0;
 
 private:
     inline int GetUniformLocation(const std::string &name) { return glGetUniformLocation(shader, name.c_str()); };
@@ -208,6 +217,9 @@ public:
 
     inline void SwapBuffers() { glfwSwapBuffers(window); };
     inline void PollEvents() { glfwPollEvents(); };
+
+	inline void StartClock() { timePoint1 = clock(); };
+	void FrameRate(int fr);
 
     inline void SetShaderPath(const std::string &name) { shaderFile = name; };
     void MakeShader();
